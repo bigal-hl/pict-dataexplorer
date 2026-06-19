@@ -1,0 +1,47 @@
+{
+	"name": "bookstore_explorer",
+	"version": "0.0.1",
+	"description": "Demo app showcasing pict-dataexplorer (the config-driven hierarchical data explorer) against the retold bookstore harness.",
+	"main": "source/Bookstore-Explorer-Application.js",
+	"scripts": {
+		"start": "node source/Bookstore-Explorer-Application.js",
+		"build": "npx quack build && npx quack copy"
+	},
+	"author": "steven velozo <steven@velozo.com>",
+	"license": "MIT",
+	"retold": {
+		"ExampleApplication": {
+			"Stage": false,
+			"Title": "Bookstore Explorer",
+			"Summary": "The full-fidelity explorer against the live retold bookstore harness — Stores / Books / Authors drilling into 1:N, M:N and N:1 relationships across 10k+ records. Requires the harness on :8086, so it is documented but not staged onto GitHub Pages.",
+			"Complexity": "Intermediate"
+		}
+	},
+	"dependencies": {
+		"pict": "^1.0.372",
+		"pict-application": "^1.0.34",
+		"pict-provider": "^1.0.13",
+		"pict-view": "^1.0.68",
+		"pict-section-recordset": "^1.23.0"
+	},
+	"devDependencies": {
+		"quackage": "^1.3.0"
+	},
+	"copyFilesSettings": {
+		"whenFileExists": "overwrite"
+	},
+	"copyFiles": [
+		{
+			"from": "./html/*",
+			"to": "./dist/"
+		},
+		{
+			"from": "./css/**",
+			"to": "./dist/css/"
+		},
+		{
+			"from": "./node_modules/pict/dist/*",
+			"to": "./dist/js/"
+		}
+	]
+}

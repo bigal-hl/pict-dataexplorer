@@ -1,0 +1,47 @@
+{
+	"name": "music_explorer",
+	"version": "0.0.1",
+	"description": "Backend-free demo of pict-dataexplorer — Artists → Albums → Tracks resolved from an in-memory dataset via custom Resolvers.",
+	"main": "source/Music-Explorer-Application.js",
+	"scripts": {
+		"start": "node source/Music-Explorer-Application.js",
+		"build": "npx quack build && npx quack copy"
+	},
+	"author": "steven velozo <steven@velozo.com>",
+	"license": "MIT",
+	"retold": {
+		"ExampleApplication": {
+			"Stage": true,
+			"Title": "Music Explorer",
+			"Summary": "A backend-free hierarchical data explorer — Artists, Albums and Tracks resolved entirely from an in-memory dataset through custom Resolver functions, each record with a preview-card popout.",
+			"Complexity": "Beginner"
+		}
+	},
+	"dependencies": {
+		"pict": "^1.0.372",
+		"pict-application": "^1.0.34",
+		"pict-provider": "^1.0.13",
+		"pict-view": "^1.0.68",
+		"pict-section-recordset": "^1.23.0"
+	},
+	"devDependencies": {
+		"quackage": "^1.3.0"
+	},
+	"copyFilesSettings": {
+		"whenFileExists": "overwrite"
+	},
+	"copyFiles": [
+		{
+			"from": "./html/*",
+			"to": "./dist/"
+		},
+		{
+			"from": "./css/*",
+			"to": "./dist/"
+		},
+		{
+			"from": "./node_modules/pict/dist/*",
+			"to": "./dist/"
+		}
+	]
+}

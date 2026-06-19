@@ -1,0 +1,77 @@
+{
+	"Generated": "2026-06-19T07:14:05.495Z",
+	"Mode": "module",
+	"GitHubOrg": "fable-retold",
+	"DefaultBranch": "master",
+	"Module": {
+		"Name": "pict-dataexplorer",
+		"Repo": "pict-dataexplorer",
+		"Group": "",
+		"Branch": "master",
+		"HasDocs": true,
+		"HasCover": true,
+		"Sidebar": [
+			{
+				"Title": "Getting Started",
+				"Children": [
+					{
+						"Title": "Overview",
+						"Path": "README.md"
+					},
+					{
+						"Title": "Quick Start",
+						"Path": "Quick_Start.md"
+					}
+				]
+			},
+			{
+				"Title": "Architecture",
+				"Children": [
+					{
+						"Title": "Design Overview",
+						"Path": "Architecture.md"
+					}
+				]
+			},
+			{
+				"Title": "Reference",
+				"Children": [
+					{
+						"Title": "Implementation Reference",
+						"Path": "Implementation_Reference.md"
+					},
+					{
+						"Title": "Function Reference",
+						"Path": "Function_Reference.md"
+					}
+				]
+			},
+			{
+				"Title": "Examples",
+				"Children": [
+					{
+						"Title": "Music Explorer (no backend)",
+						"Path": "examples/music_explorer/README.md"
+					}
+				]
+			}
+		],
+		"DocFiles": [
+			"Architecture.md",
+			"Function_Reference.md",
+			"Implementation_Reference.md",
+			"Quick_Start.md",
+			"README.md",
+			"_brand.json",
+			"_cover.md",
+			"_sidebar.md",
+			"_topbar.md",
+			"examples/README.md",
+			"examples/music_explorer/README.md",
+			"examples/music_explorer/index.html",
+			"examples/music_explorer/music-explorer.css",
+			"examples/music_explorer/music_explorer.compatible.min.js"
+		]
+	},
+	"Groups": []
+}

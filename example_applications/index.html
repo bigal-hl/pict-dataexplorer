@@ -1,0 +1,54 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+	<meta charset="UTF-8">
+	<meta name="viewport" content="width=device-width, initial-scale=1.0">
+	<title>Examples - pict-dataexplorer</title>
+	<style>
+		*, *::before, *::after { box-sizing: border-box; }
+		body { margin: 0; padding: 0; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; background: #FAEDCD; color: #264653; }
+
+		/* --- Header Bar --- */
+		.pict-example-header { display: flex; align-items: stretch; background: #264653; border-bottom: 3px solid #E76F51; }
+		.pict-example-badge { background: #E76F51; color: #fff; padding: 0.6rem 1rem; font-size: 0.7rem; font-weight: 800; text-transform: uppercase; letter-spacing: 0.1em; display: flex; align-items: center; gap: 0.5rem; }
+		.pict-example-badge svg { width: 14px; height: 14px; fill: #fff; flex-shrink: 0; }
+		.pict-example-app-name { padding: 0.6rem 1rem; color: #FAEDCD; font-size: 1.1rem; font-weight: 600; display: flex; align-items: center; }
+		.pict-example-module { margin-left: auto; padding: 0.6rem 1rem; color: #D4A373; font-size: 0.75rem; display: flex; align-items: center; letter-spacing: 0.03em; }
+
+		/* --- Content Area --- */
+		.pict-example-content { padding: 1.5rem; }
+		.pict-example-content h1 { color: #264653; font-size: 1.5rem; margin: 0 0 0.5rem; }
+		.pict-example-content p { color: #5a6c73; font-size: 0.9rem; margin: 0 0 1.25rem; max-width: 60ch; line-height: 1.5; }
+
+		/* --- Example List --- */
+		.example-list { list-style: none; padding: 0; margin: 0; display: flex; flex-direction: column; gap: 0.5rem; }
+		.example-list li { background: #fff; border: 1px solid #D4A373; border-left: 4px solid #E76F51; border-radius: 4px; transition: border-color 0.15s, box-shadow 0.15s; }
+		.example-list li:hover { border-left-color: #264653; box-shadow: 0 2px 8px rgba(38,70,83,0.1); }
+		.example-list a { display: block; padding: 0.75rem 1rem; text-decoration: none; color: #264653; font-weight: 500; font-size: 0.95rem; }
+		.example-list a:hover { color: #E76F51; }
+		.example-list .desc { display: block; color: #7a8a90; font-weight: 400; font-size: 0.8rem; margin-top: 0.15rem; }
+	</style>
+</head>
+<body>
+	<div class="pict-example-header">
+		<div class="pict-example-badge">
+			<svg viewBox="0 0 16 16"><polygon points="8,1 10,6 16,6 11,9.5 13,15 8,11.5 3,15 5,9.5 0,6 6,6"/></svg>
+			Pict Example
+		</div>
+		<div class="pict-example-app-name">Example Index</div>
+		<div class="pict-example-module">pict-dataexplorer</div>
+	</div>
+	<div class="pict-example-content">
+		<h1>Example Applications</h1>
+		<p>Config-driven hierarchical "folders" data explorer. These run against the retold bookstore harness
+			(start it on :8086; this server proxies <code>/1.0/*</code> to it).</p>
+		<ul class="example-list">
+			<li>
+				<a href="bookstore_explorer/dist/index.html">Bookstore Explorer
+					<span class="desc">Expand Stores / Books / Authors → child collections (Filter, Join, Reference) → records with preview-card popouts.</span>
+				</a>
+			</li>
+		</ul>
+	</div>
+</body>
+</html>

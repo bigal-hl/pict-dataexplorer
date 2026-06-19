@@ -1,0 +1,7 @@
+{
+	"Name": "pict-dataexplorer",
+	"Version": "1.0.0",
+	"Description": "Config-driven hierarchical (\"folders\") data explorer for Pict — browse a relational dataset as an expandable tree of records and their child collections, each record with a preview-card popout. Resolves lists from meadow-endpoints (Lite / paginated / filtered / join) or a host-supplied custom resolver.",
+	"GeneratedAt": "2026-06-19T07:14:05.726Z",
+	"GitCommit": "e46e651"
+}

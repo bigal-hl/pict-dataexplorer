@@ -1,0 +1,17 @@
+{
+	"Hash": "pict-dataexplorer",
+	"Name": "Pict DataExplorer",
+	"Tagline": "Config-driven hierarchical \"folders\" data explorer for Pict — browse a relational dataset as an expandable tree of records and their child collections.",
+	"Palette": "mix",
+	"Icon": "<svg xmlns=\"http://www.w3.org/2000/svg\" viewBox=\"0 0 96 96\" width=\"96\" height=\"96\"><circle cx=\"48\" cy=\"48\" r=\"46\" fill=\"#156dd1\"/><g fill=\"none\" stroke=\"#ffffff\" stroke-width=\"4\" stroke-linecap=\"round\"><path d=\"M34 30 V66\"/><path d=\"M34 40 H58\"/><path d=\"M34 56 H58\"/></g><circle cx=\"34\" cy=\"30\" r=\"7\" fill=\"#ffffff\"/><circle cx=\"60\" cy=\"40\" r=\"6\" fill=\"#f59e0b\"/><circle cx=\"60\" cy=\"56\" r=\"6\" fill=\"#ffffff\"/></svg>",
+	"IconType": "svg",
+	"Favicon": "<svg xmlns=\"http://www.w3.org/2000/svg\" viewBox=\"0 0 96 96\" width=\"96\" height=\"96\"><circle cx=\"48\" cy=\"48\" r=\"46\" fill=\"#156dd1\"/><g fill=\"none\" stroke=\"#ffffff\" stroke-width=\"4\" stroke-linecap=\"round\"><path d=\"M34 30 V66\"/><path d=\"M34 40 H58\"/><path d=\"M34 56 H58\"/></g><circle cx=\"34\" cy=\"30\" r=\"7\" fill=\"#ffffff\"/><circle cx=\"60\" cy=\"40\" r=\"6\" fill=\"#f59e0b\"/><circle cx=\"60\" cy=\"56\" r=\"6\" fill=\"#ffffff\"/></svg>",
+	"Colors": {
+		"Primary": "#156dd1",
+		"Secondary": "#f59e0b",
+		"PrimaryLight": "#4a90e2",
+		"PrimaryDark": "#0f4f99",
+		"SecondaryLight": "#fbbf5a",
+		"SecondaryDark": "#c77f08"
+	}
+}

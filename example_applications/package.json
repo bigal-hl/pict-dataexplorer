@@ -1,0 +1,16 @@
+{
+	"name": "example_applications",
+	"version": "1.0.0",
+	"description": "Static server + /1.0 API pass-through to the bookstore harness for the pict-dataexplorer examples.",
+	"main": "ServeExamples.js",
+	"scripts": {
+		"start": "node ServeExamples.js"
+	},
+	"author": "steven velozo <steven@velozo.com>",
+	"license": "MIT",
+	"dependencies": {
+		"orator": "^5.0.1",
+		"orator-http-proxy": "^1.0.1",
+		"orator-serviceserver-restify": "^2.0.3"
+	}
+}
