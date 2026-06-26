@@ -249,7 +249,9 @@ class PictDataExplorerDataProvider extends libPictProvider
 
 	_sortClause(pEntityConfig)
 	{
-		return (pEntityConfig && pEntityConfig.Sort) ? `FSF~${pEntityConfig.Sort}~ASC~0` : '';
+		if (!pEntityConfig || !pEntityConfig.Sort) { return ''; }
+		const tmpDirection = (String(pEntityConfig.SortDirection || 'ASC').toUpperCase() === 'DESC') ? 'DESC' : 'ASC';
+		return `FSF~${pEntityConfig.Sort}~${tmpDirection}~0`;
 	}
 
 	_projection(pEntityConfig)

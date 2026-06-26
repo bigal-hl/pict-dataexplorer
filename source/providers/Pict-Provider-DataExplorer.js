@@ -3,6 +3,25 @@ const libPictProvider = require('pict-provider');
 const libPictDataExplorerDataProvider = require('./Pict-DataExplorer-DataProvider.js');
 const libPictViewDataExplorer = require('../views/PictView-DataExplorer.js');
 
+/**
+ * Derive the text column(s) a tier's filter box searches (server-side substring LK). Single field by
+ * default so the clause stays cleanly ANDable with relationship / base filters. The preference mirrors
+ * pict-section-recordset's quick-filter default (`_deriveDefaultQuickFilters`): a plain-column Title,
+ * then Name, then Title, then the first non-key Lite column.
+ * @param {Record<string, any>} pEntity
+ * @return {Array<string>}
+ */
+function deriveSearchFields(pEntity)
+{
+	const tmpTitle = pEntity.Display && pEntity.Display.Title;
+	if (tmpTitle && (String(tmpTitle).indexOf('{~') < 0) && (tmpTitle !== pEntity.IDField)) { return [ tmpTitle ]; }
+	const tmpLite = Array.isArray(pEntity.Lite) ? pEntity.Lite : [];
+	if (tmpLite.indexOf('Name') >= 0) { return [ 'Name' ]; }
+	if (tmpLite.indexOf('Title') >= 0) { return [ 'Title' ]; }
+	const tmpFirst = tmpLite.find((pColumn) => !(/^(ID|GUID)/.test(pColumn)));
+	return tmpFirst ? [ tmpFirst ] : [];
+}
+
 /** @type {Record<string, any>} */
 const _DEFAULT_CONFIGURATION =
 {
@@ -79,6 +98,7 @@ class PictProviderDataExplorer extends libPictProvider
 			tmpEntity.Lite = Array.isArray(tmpEntity.Lite) ? tmpEntity.Lite : [];
 			tmpEntity.URLPrefix = tmpEntity.URLPrefix || tmpConfig.URLPrefix || '';
 			tmpEntity.Display = tmpEntity.Display || { Title: tmpEntity.IDField };
+			tmpEntity.SearchFields = Array.isArray(tmpEntity.SearchFields) ? tmpEntity.SearchFields : deriveSearchFields(tmpEntity);
 			tmpEntity.Children = (Array.isArray(tmpEntity.Children) ? tmpEntity.Children : []).map((pChild) =>
 				Object.assign({}, pChild,
 					{

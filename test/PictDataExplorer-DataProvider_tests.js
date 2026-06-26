@@ -62,6 +62,15 @@ suite
 			Expect(tmpCall.Options.Projection).to.deep.equal({ Mode: 'LiteExtended', ExtraColumns: [ 'Title', 'Genre' ] });
 		});
 
+		test('resolveList honors SortDirection — DESC when asked, ASC otherwise', () =>
+		{
+			const tmp = newStubbedProvider([ [], [] ]);
+			tmp.Provider.resolveList(Object.assign({}, BOOK, { SortDirection: 'DESC' }), '', 0, 25, () => {});
+			Expect(tmp.Calls.page[0].Filter).to.equal('FSF~Title~DESC~0');
+			tmp.Provider.resolveList(Object.assign({}, BOOK, { SortDirection: 'whatever' }), '', 0, 25, () => {});
+			Expect(tmp.Calls.page[1].Filter).to.equal('FSF~Title~ASC~0');   // anything not DESC → ASC
+		});
+
 		test('resolveList without Lite columns sends no projection (full records)', () =>
 		{
 			const tmp = newStubbedProvider([ [] ]);

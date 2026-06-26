@@ -128,5 +128,91 @@ suite
 			tmp.View.toggleNode('root:Book');
 			Expect(tmp.View._node('root:Book/rec:1').HasChildren).to.equal(false);   // depth 1 == MaxDepth
 		});
+
+		test('an expanded folder gets a filter + sort toolbar; a collapsed one does not', () =>
+		{
+			const tmp = newExplorer();
+			tmp.View.renderExplorer();
+			Expect(tmp.View._folderDescriptor('root:Book', tmp.View._node('root:Book')).ToolbarSlot).to.deep.equal([]);
+			tmp.View.toggleNode('root:Book');
+			const tmpToolbar = tmp.View._folderDescriptor('root:Book', tmp.View._node('root:Book')).ToolbarSlot[0];
+			Expect(tmpToolbar, 'toolbar present once expanded').to.be.an('object');
+			Expect(tmpToolbar.FilterSlot.length, 'Book has a Title search field').to.equal(1);
+			Expect(tmpToolbar.SortSlot.length).to.equal(1);
+			const tmpSelected = tmpToolbar.SortSlot[0].Columns.find((pColumn) => pColumn.IsSelected);
+			Expect(tmpSelected.Name, 'default-selected to the title/search field').to.equal('Title');
+		});
+
+		test('setTierFilter pushes a server-side LK clause on the search field and reloads from page 0', () =>
+		{
+			const tmp = newExplorer();
+			let tmpCapturedFilter = null;
+			tmp.DataProvider.resolveList = (pEntityConfig, pFilter, pBegin, pCount, fCallback) =>
+			{
+				tmpCapturedFilter = pFilter;
+				fCallback(null, [ { IDBook: 3, Title: 'Filtered', Genre: 'eng' } ]);
+			};
+			tmp.View.renderExplorer();
+			tmp.View.toggleNode('root:Book');
+			tmp.View.setTierFilter('root:Book', 'war');
+			Expect(tmp.View._node('root:Book').UserFilter).to.equal('war');
+			Expect(tmpCapturedFilter).to.equal('FBV~Title~LK~%war%');   // raw % — the EntityProvider encodes the URL
+			Expect(tmp.View._node('root:Book').MemberKeys).to.deep.equal([ 'root:Book/rec:3' ]);
+		});
+
+		test('setTierSort + toggleTierSortDir drive the resolved entity Sort / SortDirection', () =>
+		{
+			const tmp = newExplorer();
+			let tmpCapturedConfig = null;
+			tmp.DataProvider.resolveList = (pEntityConfig, pFilter, pBegin, pCount, fCallback) =>
+			{
+				tmpCapturedConfig = pEntityConfig;
+				fCallback(null, [ { IDBook: 1, Title: 'A', Genre: 'eng' } ]);
+			};
+			tmp.View.renderExplorer();
+			tmp.View.toggleNode('root:Book');
+			tmp.View.setTierSort('root:Book', 'Genre');
+			Expect(tmpCapturedConfig.Sort).to.equal('Genre');
+			Expect(tmpCapturedConfig.SortDirection).to.equal('ASC');
+			tmp.View.toggleTierSortDir('root:Book');
+			Expect(tmpCapturedConfig.SortDirection).to.equal('DESC');
+			Expect(tmp.View._node('root:Book').UserSort).to.equal('Genre');
+		});
+
+		test('_sortOptions drops GUID columns; _effectiveSortField defaults to the derived search field', () =>
+		{
+			const tmpConfig =
+			{
+				Roots: [ { Entity: 'Widget' } ],
+				Entities: { Widget: { Lite: [ 'Name', 'Code', 'GUIDWidget' ], Display: { Title: 'Name' } } },
+			};
+			const tmp = newExplorer(tmpConfig);
+			tmp.View.renderExplorer();
+			const tmpNode = tmp.View._node('root:Widget');
+			Expect(tmp.View._sortOptions(tmpNode.EntityConfig)).to.deep.equal([ 'Name', 'Code' ]);
+			Expect(tmp.View._effectiveSortField(tmpNode)).to.equal('Name');
+		});
+
+		test('toggling a column persists it (localStorage) + lights up a chip on the entity records', () =>
+		{
+			const tmpConfig =
+			{
+				Roots: [ { Entity: 'Widget' } ],
+				Entities: { Widget: { Lite: [ 'Name', 'Code', 'GUIDWidget' ], Display: { Title: 'Name' } } },
+			};
+			const tmp = newExplorer(tmpConfig);
+			tmp.DataProvider.resolveList = (pE, pF, pB, pC, fCb) => fCb(null, [ { IDWidget: 1, Name: 'W1', Code: 'ABC', GUIDWidget: 'g1' } ]);
+			tmp.View._setChosenColumns('Widget', []);   // clean slate (localStorage persists across tests)
+			tmp.View.renderExplorer();
+			tmp.View.toggleNode('root:Widget');
+			// chip-eligible = Lite minus GUID minus the Title field → just 'Code'
+			const tmpToolbar = tmp.View._folderDescriptor('root:Widget', tmp.View._node('root:Widget')).ToolbarSlot[0];
+			Expect(tmpToolbar.ColumnsSlot[0].Columns.map((pColumn) => pColumn.Column)).to.deep.equal([ 'Code' ]);
+			Expect(tmp.View._recordDescriptor('root:Widget/rec:1', tmp.View._node('root:Widget/rec:1')).ChipsSlot).to.deep.equal([]);
+			tmp.View.toggleColumn('Widget', 'Code');
+			Expect(tmp.View._chosenColumns('Widget')).to.deep.equal([ 'Code' ]);
+			Expect(tmp.View._recordDescriptor('root:Widget/rec:1', tmp.View._node('root:Widget/rec:1')).ChipsSlot).to.deep.equal([ { Column: 'Code', Value: 'ABC' } ]);
+			tmp.View._setChosenColumns('Widget', []);   // leave storage clean for re-runs
+		});
 	}
 );
