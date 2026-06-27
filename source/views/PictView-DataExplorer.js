@@ -349,6 +349,7 @@ class PictViewDataExplorer extends libPictView
 				this._state().Nodes[tmpChildKey] =
 				{
 					Kind: 'record', Entity: pNode.Entity, EntityConfig: pNode.EntityConfig, Record: pRecord,
+					Context: pNode.Context || {},   // inherit the folder's accumulated ancestor-id context
 					Expanded: false, Loaded: false, FolderKeys: [], Depth: pNode.Depth + 1,
 					HasChildren: ((pNode.EntityConfig.Children || []).length > 0) && ((pNode.Depth + 1) < this.explorerConfig.MaxDepth),
 				};
@@ -375,7 +376,7 @@ class PictViewDataExplorer extends libPictView
 		const tmpChildConfig = Object.assign({}, pNode.EntityConfig,
 			{
 				Lite: this._effectiveLite(pNode),
-				Filter: [ pNode.EntityConfig.Filter, this._filterExpression(pNode) ].filter((pPart) => (pPart && String(pPart).length > 0)).join('~') || undefined,
+				Filter: [ pNode.EntityConfig.Filter, this._contextFilter(pNode), this._filterExpression(pNode) ].filter((pPart) => (pPart && String(pPart).length > 0)).join('~') || undefined,
 				Sort: this._effectiveSortField(pNode) || undefined,
 				SortDirection: this._effectiveSortDir(pNode),
 			});
@@ -392,14 +393,23 @@ class PictViewDataExplorer extends libPictView
 	{
 		const tmpChildren = pNode.EntityConfig.Children || [];
 		const tmpCountQueue = [];
+		// Each child folder inherits this record's accumulated ancestor-id context PLUS this record's own id, so a
+		// descendant tier can filter by an ancestor (e.g. a Material reached through a Line Item carries IDLineItem).
+		const tmpFolderContext = Object.assign({}, pNode.Context, this._ownContextEntry(pNode));
 		tmpChildren.forEach((pChildRel) =>
 		{
+			const tmpRelationship = pChildRel.Relationship || {};
+			// A tier can require ancestor context to even appear (so it shows only on the contextual path, not at
+			// the entity's root browse) — skip it when a required context key is absent.
+			const tmpRequire = Array.isArray(tmpRelationship.RequireContext) ? tmpRelationship.RequireContext : [];
+			if (tmpRequire.some((pColumn) => (tmpFolderContext[pColumn] === undefined) || (tmpFolderContext[pColumn] === null))) { return; }
 			const tmpChildEntityConfig = this._entityConfig(pChildRel.Entity);
 			const tmpFolderKey = `${pKey}/fld:${pChildRel.Label}`;
 			const tmpFolderNode =
 			{
 				Kind: 'folder', Entity: pChildRel.Entity, EntityConfig: tmpChildEntityConfig, Label: pChildRel.Label,
 				ChildRel: pChildRel, ParentRecord: pNode.Record, ParentEntityConfig: pNode.EntityConfig,
+				Context: tmpFolderContext,
 				Expanded: false, Loaded: false, Loading: false, Count: null,
 				MemberKeys: [], Cursor: 0, HasMore: true, PageSize: pChildRel.PageSize || this.explorerConfig.PageSize, Depth: pNode.Depth + 1,
 			};
@@ -413,7 +423,12 @@ class PictViewDataExplorer extends libPictView
 		const fOneDone = () => { tmpPending--; if (tmpPending <= 0) { fComplete(); } };
 		tmpCountQueue.forEach((pEntry) =>
 		{
-			this.dataProvider.resolveChildCount(pNode.EntityConfig, pNode.Record, pEntry.Node.ChildRel, pEntry.Node.EntityConfig, (pError, pCount) =>
+			// Scope the badge by the same ancestor context the list will use, so the count matches the contents.
+			const tmpContextFilter = this._contextFilter(pEntry.Node);
+			const tmpCountConfig = tmpContextFilter
+				? Object.assign({}, pEntry.Node.EntityConfig, { Filter: [ pEntry.Node.EntityConfig.Filter, tmpContextFilter ].filter((pPart) => (pPart && String(pPart).length > 0)).join('~') || undefined })
+				: pEntry.Node.EntityConfig;
+			this.dataProvider.resolveChildCount(pNode.EntityConfig, pNode.Record, pEntry.Node.ChildRel, tmpCountConfig, (pError, pCount) =>
 			{
 				pEntry.Node.Count = pError ? null : pCount;
 				fOneDone();
@@ -577,6 +592,31 @@ class PictViewDataExplorer extends libPictView
 		const tmpLite = (pNode.EntityConfig && Array.isArray(pNode.EntityConfig.Lite)) ? pNode.EntityConfig.Lite.slice() : [];
 		this._chosenColumns(pNode.Entity).forEach((pColumn) => { if (tmpLite.indexOf(pColumn) < 0) { tmpLite.push(pColumn); } });
 		return tmpLite;
+	}
+
+	/** This record's own id keyed by its IDField — the entry a child folder adds to the inherited context. */
+	_ownContextEntry(pRecordNode)
+	{
+		const tmpIDField = pRecordNode && pRecordNode.EntityConfig && pRecordNode.EntityConfig.IDField;
+		if (!tmpIDField || !pRecordNode.Record) { return {}; }
+		const tmpValue = pRecordNode.Record[tmpIDField];
+		return ((tmpValue === undefined) || (tmpValue === null)) ? {} : { [tmpIDField]: tmpValue };
+	}
+
+	/**
+	 * AND clauses scoping a child tier by ANCESTOR ids — the `ContextKeys` declared on the folder's relationship,
+	 * pulled from the node's accumulated context (e.g. a Material's Tests tier scoped to the Line Item it hangs
+	 * under). Keys absent from the context are simply dropped, so the same tier degrades gracefully off the path.
+	 */
+	_contextFilter(pNode)
+	{
+		const tmpRelationship = (pNode && pNode.ChildRel && pNode.ChildRel.Relationship) || {};
+		const tmpKeys = Array.isArray(tmpRelationship.ContextKeys) ? tmpRelationship.ContextKeys : [];
+		const tmpContext = (pNode && pNode.Context) || {};
+		return tmpKeys
+			.filter((pColumn) => (tmpContext[pColumn] !== undefined) && (tmpContext[pColumn] !== null))
+			.map((pColumn) => `FBV~${pColumn}~EQ~${tmpContext[pColumn]}`)
+			.join('~');
 	}
 
 	/** localStorage key for an entity's chosen chip columns (per-entity, so it persists across visits). */

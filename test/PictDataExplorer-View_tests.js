@@ -275,5 +275,59 @@ suite
 			tmp.View.explorerConfig.ColumnBlacklist = [ 'Units' ];   // global blacklist stacks on the per-entity one
 			Expect(tmp.View._chipEligibleColumns(tmpConfig, 'PayItem')).to.deep.equal([ 'Name', 'ItemCode' ]);
 		});
+
+		test('_contextFilter builds ancestor AND-clauses from the node context (missing keys dropped)', () =>
+		{
+			const tmp = newExplorer();
+			Expect(tmp.View._contextFilter({ ChildRel: { Relationship: { ContextKeys: [ 'IDProject', 'IDLineItem' ] } }, Context: { IDProject: 7, IDLineItem: 42 } }))
+				.to.equal('FBV~IDProject~EQ~7~FBV~IDLineItem~EQ~42');
+			Expect(tmp.View._contextFilter({ ChildRel: { Relationship: { ContextKeys: [ 'IDProject' ] } }, Context: {} })).to.equal('');   // missing key dropped
+			Expect(tmp.View._contextFilter({ ChildRel: { Relationship: {} }, Context: { IDProject: 7 } })).to.equal('');                    // no ContextKeys
+		});
+
+		test('contextual relationships: a tier filters by an ANCESTOR id (ContextKeys) and is gated by RequireContext', () =>
+		{
+			const tmpConfig =
+			{
+				URLPrefix: '/x/', PageSize: 25, MaxDepth: 8,
+				Roots: [ { Label: 'Projects', Entity: 'Project' }, { Label: 'Materials', Entity: 'Material' } ],
+				Entities:
+				{
+					Project: { IDField: 'IDProject', Lite: [ 'Name' ], Display: { Title: 'Name' }, Children: [ { Label: 'Materials', Entity: 'Material', Relationship: { Type: 'Filter', Key: 'IDProject' } } ] },
+					Material: { IDField: 'IDMaterial', Lite: [ 'Name' ], Display: { Title: 'Name' }, Children:
+						[
+							{ Label: 'Sample Tests', Entity: 'PLIMT', Resolve: 'count', Relationship: { Type: 'Filter', Key: 'IDMaterial', ContextKeys: [ 'IDProject' ], RequireContext: [ 'IDProject' ] } },
+							{ Label: 'All Tests', Entity: 'PLIMT', Relationship: { Type: 'Filter', Key: 'IDMaterial' } },
+						] },
+					PLIMT: { IDField: 'IDPLIMT', Lite: [ 'Name' ], Display: { Title: 'Name' } },
+				},
+			};
+			const tmp = newExplorer(tmpConfig);
+			const tmpSeen = {};
+			tmp.DataProvider.resolveList = (pEntityConfig, pFilter, pBegin, pCount, fCallback) =>
+				fCallback(null, (pEntityConfig.Entity === 'Material') ? [ { IDMaterial: 50, Name: 'Mat' } ] : [ { IDProject: 100, Name: 'P' } ]);
+			tmp.DataProvider.resolveChildren = (pParentConfig, pParentRecord, pChildRel, pChildConfig, pBegin, pCount, fCallback) =>
+			{
+				tmpSeen[pChildRel.Label] = pChildConfig.Filter;
+				fCallback(null, (pChildRel.Entity === 'Material') ? [ { IDMaterial: 50, Name: 'Mat' } ] : [ { IDPLIMT: 9, Name: 'T' } ], { hasMore: false });
+			};
+			tmp.DataProvider.resolveChildCount = (pP, pR, pChildRel, pChildConfig, fCallback) => { tmpSeen[`count:${pChildRel.Label}`] = pChildConfig.Filter; fCallback(null, 1); };
+			tmp.View.renderExplorer();
+
+			tmp.View.toggleNode('root:Project');
+			tmp.View.toggleNode('root:Project/rec:100');
+			tmp.View.toggleNode('root:Project/rec:100/fld:Materials');
+			tmp.View.toggleNode('root:Project/rec:100/fld:Materials/rec:50');
+			tmp.View.toggleNode('root:Project/rec:100/fld:Materials/rec:50/fld:Sample Tests');
+			Expect(tmpSeen['Sample Tests']).to.contain('FBV~IDProject~EQ~100');         // list scoped to the ancestor Project
+			Expect(tmpSeen['count:Sample Tests']).to.contain('FBV~IDProject~EQ~100');   // badge scoped to match
+
+			// Browsed as a root, Material has no Project ancestor → the RequireContext tier is gated out.
+			tmp.View.toggleNode('root:Material');
+			tmp.View.toggleNode('root:Material/rec:50');
+			const tmpRootMaterial = tmp.View._node('root:Material/rec:50');
+			Expect(tmpRootMaterial.FolderKeys.some((pKey) => pKey.indexOf('fld:Sample Tests') >= 0)).to.equal(false);
+			Expect(tmpRootMaterial.FolderKeys.some((pKey) => pKey.indexOf('fld:All Tests') >= 0)).to.equal(true);
+		});
 	}
 );
