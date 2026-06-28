@@ -276,7 +276,7 @@ class PictViewDataExplorer extends libPictView
 			});
 		}
 
-		if (tmpNode.Loaded) { return this.renderChildren(pKey); }
+		if (tmpNode.Loaded) { this.renderChildren(pKey); this._autoExpandSoleChild(pKey); return; }
 
 		// First expand → load this node's children, showing a transient "Loading…".
 		this.pict.ContentAssignment.assignContent(`#${this._domID('PDEX-Children', pKey)}`, '<div class="pdex-loading">Loading…</div>');
@@ -285,10 +285,30 @@ class PictViewDataExplorer extends libPictView
 		{
 			tmpNode.Loading = false;
 			tmpNode.Loaded = true;
-			if (tmpNode.Expanded) { this.renderChildren(pKey); }
+			if (tmpNode.Expanded) { this.renderChildren(pKey); this._autoExpandSoleChild(pKey); }
 		};
 		if (tmpNode.Kind === 'folder') { this._loadFolderMembers(pKey, tmpNode, fComplete); }
 		else { this._loadRecordFolders(pKey, tmpNode, fComplete); }
+	}
+
+	/**
+	 * When `AutoExpandSoleChild` is set and a just-expanded node has exactly ONE child collection (folder),
+	 * expand that folder too — so a node whose only child is e.g. "Materials" doesn't force a second click.
+	 * Cascades down a chain of sole children; stops as soon as a level has 0 or 2+ child folders.
+	 */
+	_autoExpandSoleChild(pKey)
+	{
+		if (!this.explorerConfig || !this.explorerConfig.AutoExpandSoleChild) { return; }
+		const tmpNodes = this._state().Nodes;
+		const tmpPrefix = `${pKey}/`;
+		const tmpChildFolderKeys = Object.keys(tmpNodes).filter((pNodeKey) =>
+			(pNodeKey.indexOf(tmpPrefix) === 0)
+			&& (pNodeKey.slice(tmpPrefix.length).indexOf('/') < 0)   // direct child only
+			&& tmpNodes[pNodeKey] && (tmpNodes[pNodeKey].Kind === 'folder'));
+		if ((tmpChildFolderKeys.length === 1) && !tmpNodes[tmpChildFolderKeys[0]].Expanded)
+		{
+			this.toggleNode(tmpChildFolderKeys[0]);
+		}
 	}
 
 	loadMore(pKey)
