@@ -1,7 +1,7 @@
 // The container for all the pict-dataexplorer related code.
 //
 // pict-dataexplorer is a config-driven, hierarchical ("folders") data explorer: browse a relational
-// dataset as an expandable tree of records and their child collections — expand a Project to see its
+// dataset as an expandable tree of records and their child collections — expand a record to see its
 // 5 Users, 10 Media, 3 Documents — each expandable, each record carrying a preview-card popout. Lists
 // resolve from meadow-endpoints (Lite / paginated / filtered / two-hop join) or a host-supplied
 // custom resolver. Preview cards are a soft dependency on pict-section-recordset's RecordSetCardManager.

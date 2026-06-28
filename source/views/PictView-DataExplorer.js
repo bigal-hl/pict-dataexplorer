@@ -11,6 +11,7 @@ const _ExplorerCSS = /*css*/`
 .pdex > .pdex-node > .pdex-children, .pdex-root > .pdex-children { border-left: none; margin-left: 0; padding-left: 0; }
 .pdex-row { display: flex; align-items: center; gap: 0.4rem; padding: 0.28rem 0.4rem; border-radius: 7px; cursor: pointer; min-width: 0; }
 .pdex-row:hover { background: var(--theme-color-background-tertiary, #eef1f5); }
+.pdex-row-selected, .pdex-row-selected:hover { background: var(--theme-color-brand-background, rgba(21,109,209,0.10)); box-shadow: inset 2px 0 0 var(--theme-color-brand-primary, #156dd1); }
 .pdex-caret { flex: 0 0 auto; display: inline-flex; width: 1em; color: var(--theme-color-text-muted, #6b7686); font-size: 0.8rem; }
 .pdex-caret-empty { visibility: hidden; }
 .pdex-folder-ic { flex: 0 0 auto; display: inline-flex; color: var(--theme-color-brand-primary, #156dd1); }
@@ -56,6 +57,20 @@ const _ExplorerCSS = /*css*/`
 	background: var(--theme-color-background-tertiary, #eef1f5); border-radius: 10px; padding: 0.02rem 0.5rem; }
 .pdex-chip-key { font-weight: 600; color: var(--theme-color-text-muted, #6b7686); }
 .pdex-chip-val { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+/* Host-supplied row meters (RowMeters) — a right-aligned strip of progress bars + status pills. */
+.pdex-meters { flex: 0 0 auto; display: inline-flex; align-items: center; gap: 0.4rem; margin-left: 0.4rem; }
+.pdex-meter { display: inline-flex; align-items: center; gap: 0.35rem; flex: 0 0 auto; }
+.pdex-meter-track { width: 3.4rem; height: 0.4rem; border-radius: 3px; overflow: hidden; background: var(--theme-color-background-tertiary, #eef1f5); }
+.pdex-meter-fill { display: block; height: 100%; border-radius: 3px; background: var(--theme-color-text-muted, #6b7686); }
+.pdex-meter-text { font-size: 0.72rem; color: var(--theme-color-text-muted, #6b7686); white-space: nowrap; font-variant-numeric: tabular-nums; min-width: 2.9rem; text-align: right; }
+.pdex-meter-ok .pdex-meter-fill { background: var(--theme-color-success, #2a9d54); }
+.pdex-meter-warn .pdex-meter-fill { background: var(--theme-color-warning, #d6952b); }
+.pdex-meter-bad .pdex-meter-fill { background: var(--theme-color-danger, #d1453b); }
+.pdex-pill { display: inline-flex; align-items: center; flex: 0 0 auto; font-size: 0.72rem; font-weight: 600; white-space: nowrap;
+	border-radius: 10px; padding: 0.02rem 0.5rem; background: var(--theme-color-background-tertiary, #eef1f5); color: var(--theme-color-text-muted, #6b7686); }
+.pdex-pill-ok { background: var(--theme-color-success-background, rgba(42,157,84,0.14)); color: var(--theme-color-success, #2a9d54); }
+.pdex-pill-warn { background: var(--theme-color-warning-background, rgba(214,149,43,0.16)); color: var(--theme-color-warning, #b9791f); }
+.pdex-pill-bad { background: var(--theme-color-danger-background, rgba(209,69,59,0.14)); color: var(--theme-color-danger, #d1453b); }
 `;
 
 /** @type {Record<string, any>} */
@@ -92,7 +107,7 @@ const _DEFAULT_CONFIGURATION =
 		},
 		{
 			Hash: 'PDEX-Record-Inner',
-			Template: /*html*/`<div class="pdex-row pdex-row-record" onclick="_Pict.views['{~D:Record.ViewHash~}'].toggleNode('{~D:Record.NodeKey~}')">{~TS:PDEX-Caret-Down:Record.ExpandedSlot~}{~TS:PDEX-Caret-Right:Record.CollapsedSlot~}{~TS:PDEX-Caret-None:Record.NoCaretSlot~}<span class="pdex-title {~D:Record.TitleClass~}">{~D:Record.Title~}</span>{~TS:PDEX-Card-Trigger:Record.CardSlot~}<span class="pdex-chips">{~TS:PDEX-Chip:Record.ChipsSlot~}</span><span class="pdex-subtitle">{~D:Record.Subtitle~}</span></div><div class="pdex-children" id="{~D:Record.ChildrenDOMID~}"></div>`,
+			Template: /*html*/`<div class="pdex-row pdex-row-record {~NE:Record.Selected^pdex-row-selected~}" onclick="_Pict.views['{~D:Record.ViewHash~}'].toggleNode('{~D:Record.NodeKey~}')">{~TS:PDEX-Caret-Down:Record.ExpandedSlot~}{~TS:PDEX-Caret-Right:Record.CollapsedSlot~}{~TS:PDEX-Caret-None:Record.NoCaretSlot~}<span class="pdex-title {~D:Record.TitleClass~}">{~D:Record.Title~}</span>{~TS:PDEX-Card-Trigger:Record.CardSlot~}<span class="pdex-chips">{~TS:PDEX-Chip:Record.ChipsSlot~}</span><span class="pdex-subtitle">{~D:Record.Subtitle~}</span><span class="pdex-meters">{~TS:PDEX-Meter:Record.MetersSlot~}</span></div><div class="pdex-children" id="{~D:Record.ChildrenDOMID~}"></div>`,
 		},
 		{
 			// A folder's member list (record nodes) + a "Load more" + an empty-state.
@@ -134,6 +149,10 @@ const _DEFAULT_CONFIGURATION =
 		},
 		{ Hash: 'PDEX-Column-Option', Template: /*html*/`<label class="pdex-column-opt"><input type="checkbox" {~NE:Record.Checked^checked~} onchange="_Pict.views['{~D:Record.ViewHash~}'].toggleColumn('{~D:Record.Entity~}', '{~D:Record.Column~}')" /><span>{~D:Record.Column~}</span></label>` },
 		{ Hash: 'PDEX-Chip', Template: /*html*/`<span class="pdex-chip"><span class="pdex-chip-key">{~D:Record.Column~}</span><span class="pdex-chip-val">{~D:Record.Value~}</span></span>` },
+		// Host-supplied row meters (RowMeters): a dispatcher that renders a bar or a pill per meter record.
+		{ Hash: 'PDEX-Meter', Template: /*html*/`{~TIfAbs:PDEX-Meter-Bar:Record:Record.Kind^===^bar~}{~TIfAbs:PDEX-Meter-Pill:Record:Record.Kind^===^pill~}` },
+		{ Hash: 'PDEX-Meter-Bar', Template: /*html*/`<span class="pdex-meter pdex-meter-{~D:Record.Tone~}" title="{~D:Record.Title~}"><span class="pdex-meter-track"><span class="pdex-meter-fill" style="width: {~D:Record.Percent~}%;"></span></span><span class="pdex-meter-text">{~D:Record.Label~}</span></span>` },
+		{ Hash: 'PDEX-Meter-Pill', Template: /*html*/`<span class="pdex-pill pdex-pill-{~D:Record.Tone~}" title="{~D:Record.Title~}">{~D:Record.Text~}</span>` },
 	],
 
 	Renderables: [],
@@ -225,6 +244,19 @@ class PictViewDataExplorer extends libPictView
 	{
 		const tmpNode = this._node(pKey);
 		if (!tmpNode) { return; }
+		// Selection (opt-in via the explorer config's OnNodeSelect) — a RECORD row click selects it, so a
+		// master/detail host can render the selected record in a side panel. Structural folders only expand.
+		if ((typeof this.explorerConfig.OnNodeSelect === 'function') && (tmpNode.Kind === 'record'))
+		{
+			const tmpPreviousSelected = this._state().SelectedKey;
+			this._state().SelectedKey = pKey;
+			// Un-highlight the previously-selected row IN PLACE — re-rendering it would reset its child container
+			// and collapse any expanded subtree beneath it. The newly-selected row picks up the highlight from
+			// its descriptor in the _renderInner below.
+			if (tmpPreviousSelected && (tmpPreviousSelected !== pKey)) { this._setRowSelectedClass(tmpPreviousSelected, false); }
+			try { this.explorerConfig.OnNodeSelect({ Entity: tmpNode.Entity, Record: tmpNode.Record, Key: pKey, Node: tmpNode }); }
+			catch (pError) { this.log.warn(`Pict-DataExplorer: OnNodeSelect threw: ${pError && pError.message}`); }
+		}
 		tmpNode.Expanded = !tmpNode.Expanded;
 		this._renderInner(pKey);
 		if (!tmpNode.Expanded) { return; }
@@ -394,7 +426,7 @@ class PictViewDataExplorer extends libPictView
 		const tmpChildren = pNode.EntityConfig.Children || [];
 		const tmpCountQueue = [];
 		// Each child folder inherits this record's accumulated ancestor-id context PLUS this record's own id, so a
-		// descendant tier can filter by an ancestor (e.g. a Material reached through a Line Item carries IDLineItem).
+		// descendant tier can filter by an ancestor (e.g. a grandchild tier reached through a parent carries that ancestor id).
 		const tmpFolderContext = Object.assign({}, pNode.Context, this._ownContextEntry(pNode));
 		tmpChildren.forEach((pChildRel) =>
 		{
@@ -447,6 +479,14 @@ class PictViewDataExplorer extends libPictView
 		const tmpDescriptor = (tmpNode.Kind === 'folder') ? this._folderDescriptor(pKey, tmpNode) : this._recordDescriptor(pKey, tmpNode);
 		this.pict.ContentAssignment.assignContent(`#${this._domID('PDEX-Node', pKey)}`, this.pict.parseTemplateByHash(tmpTemplate, tmpDescriptor));
 		this.pict.CSSMap.injectCSS();
+	}
+
+	/** Toggle the selected-highlight class on a node's own row IN PLACE (no re-render, so its subtree survives). */
+	_setRowSelectedClass(pKey, pSelected)
+	{
+		const tmpElements = this.pict.ContentAssignment.getElement(`#${this._domID('PDEX-Node', pKey)} > .pdex-row-record`);
+		const tmpRow = (tmpElements && (tmpElements.length !== undefined)) ? tmpElements[0] : tmpElements;
+		if (tmpRow && tmpRow.classList) { tmpRow.classList[pSelected ? 'add' : 'remove']('pdex-row-selected'); }
 	}
 
 	/** Fill a node's child container: a folder's member records, or a record's child folders. */
@@ -605,7 +645,7 @@ class PictViewDataExplorer extends libPictView
 
 	/**
 	 * AND clauses scoping a child tier by ANCESTOR ids — the `ContextKeys` declared on the folder's relationship,
-	 * pulled from the node's accumulated context (e.g. a Material's Tests tier scoped to the Line Item it hangs
+	 * pulled from the node's accumulated context (e.g. a child tier scoped to the ancestor it hangs
 	 * under). Keys absent from the context are simply dropped, so the same tier degrades gracefully off the path.
 	 */
 	_contextFilter(pNode)
@@ -728,6 +768,12 @@ class PictViewDataExplorer extends libPictView
 		const tmpChips = tmpChosen
 			.filter((pColumn) => pNode.Record && (pNode.Record[pColumn] !== undefined) && (pNode.Record[pColumn] !== null) && (String(pNode.Record[pColumn]) !== ''))
 			.map((pColumn) => ({ Column: pColumn, Value: String(pNode.Record[pColumn]) }));
+		// Host-supplied row accessory ("meters") — a right-aligned strip of progress bars + status pills, keyed
+		// off the record. Opt-in per entity via EntityConfig.RowMeters(record) → [{ Kind:'bar'|'pill', Tone, … }];
+		// rendered through the explorer's own themeable templates so any host gets a consistent visual language.
+		const tmpMeters = (typeof pNode.EntityConfig.RowMeters === 'function')
+			? (this._rowMeters(pNode.EntityConfig, pNode.Record))
+			: [];
 		// Resolve the display title; when the title field is empty (sparse data) fall back to a record
 		// identifier (`Entity #id`) so a row never renders blank — a blank row reads as broken software.
 		let tmpTitle = this._resolveDisplay(pNode.EntityConfig.Display && pNode.EntityConfig.Display.Title, pNode.Record);
@@ -747,10 +793,35 @@ class PictViewDataExplorer extends libPictView
 				Subtitle: this._resolveDisplay(pNode.EntityConfig.Display && pNode.EntityConfig.Display.Subtitle, pNode.Record),
 				CardSlot: tmpHasCard ? [ { ViewHash: this.Hash, NodeKey: pKey } ] : [],
 				ChipsSlot: tmpChips,
+				MetersSlot: tmpMeters,
+				Selected: (this._state().SelectedKey === pKey),
 			},
 			this._caretSlots(!!pNode.HasChildren, pNode.Expanded));
 		tmpDescriptor.SelfSlot = [ tmpDescriptor ];
 		return tmpDescriptor;
+	}
+
+	/**
+	 * Normalize an entity's host-supplied RowMeters(record) into render-ready meter records. Each meter is a
+	 * `{ Kind:'bar'|'pill', Tone:'ok'|'warn'|'bad'|'muted', Text, Label, Title, Percent }`; bars carry a clamped
+	 * 0-100 Percent, pills carry Text. Errors in the host hook degrade to no meters (never a broken row).
+	 */
+	_rowMeters(pEntityConfig, pRecord)
+	{
+		let tmpMeters;
+		try { tmpMeters = pEntityConfig.RowMeters(pRecord) || []; }
+		catch (pError) { this.log.warn(`Pict-DataExplorer: RowMeters threw for [${pEntityConfig.IDField}]: ${pError && pError.message}`); return []; }
+		if (!Array.isArray(tmpMeters)) { return []; }
+		return tmpMeters.filter((pMeter) => pMeter && (pMeter.Kind === 'bar' || pMeter.Kind === 'pill')).map((pMeter) =>
+			(
+				{
+					Kind: pMeter.Kind,
+					Tone: pMeter.Tone || 'muted',
+					Text: (pMeter.Text != null) ? String(pMeter.Text) : '',
+					Label: (pMeter.Label != null) ? String(pMeter.Label) : '',
+					Title: (pMeter.Title != null) ? String(pMeter.Title) : '',
+					Percent: Math.max(0, Math.min(100, Number(pMeter.Percent) || 0)),
+				}));
 	}
 
 	/** Resolve a Display value (a field name OR a `{~…~}` template) against a record into a display string. */

@@ -34,3 +34,9 @@ dist
 # dotenv
 .env
 .env.local
+
+# Sample Plan harness — LOCAL-ONLY verification app built from real LADOTD-derived fixtures.
+# NEVER commit: it carries real TestDescription/SamplingInstructions/Intent text, real IDs, and a real
+# project code. The generic explorer features (RowMeters, node-selection) live in source/ and DO ship;
+# the customer-data harness does not. The Sample Plan editor proper lives in the (private) headlight repo.
+example_applications/sampleplan_explorer/
