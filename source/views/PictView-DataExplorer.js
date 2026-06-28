@@ -539,6 +539,15 @@ class PictViewDataExplorer extends libPictView
 			const tmpFolders = tmpNode.FolderKeys.map((pFolderKey) => this._folderDescriptor(pFolderKey, this._node(pFolderKey)));
 			this.pict.ContentAssignment.assignContent(tmpContainer, this.pict.parseTemplateByHash('PDEX-Folders', { Folders: tmpFolders }));
 		}
+		// Re-rendering this container re-creates each child row with an EMPTY child container, so any ALREADY-expanded
+		// child (an auto-expanded sole child, or a child expanded before an async schema repaint reset this row) would
+		// blank until a collapse/re-open. Recurse into expanded + loaded children to refill their subtrees.
+		const tmpChildKeys = (tmpNode.Kind === 'folder') ? tmpNode.MemberKeys : tmpNode.FolderKeys;
+		(tmpChildKeys || []).forEach((pChildKey) =>
+		{
+			const tmpChildNode = this._node(pChildKey);
+			if (tmpChildNode && tmpChildNode.Expanded && tmpChildNode.Loaded) { this.renderChildren(pChildKey); }
+		});
 		this.pict.CSSMap.injectCSS();
 	}
 

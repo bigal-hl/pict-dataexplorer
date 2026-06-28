@@ -1,6 +1,6 @@
 {
 	"name": "pict-dataexplorer",
-	"version": "1.4.2",
+	"version": "1.4.3",
 	"description": "Config-driven hierarchical (\"folders\") data explorer for Pict — browse a relational dataset as an expandable tree of records and their child collections, each record with a preview-card popout. Resolves lists from meadow-endpoints (Lite / paginated / filtered / join) or a host-supplied custom resolver.",
 	"main": "source/Pict-DataExplorer.js",
 	"files": [

@@ -106,5 +106,22 @@ suite
 			tmp.View.toggleNode('root:Book/rec:1');
 			Expect(tmp.View._node('root:Book/rec:1/fld:Reviews').Expanded, 'no auto-expand without the flag').to.equal(false);
 		});
+
+		test('an auto-expanded subtree survives a parent folder late schema repaint', () =>
+		{
+			const tmp = newExplorer(CONFIG_SOLE);
+			const tmpSchemaCallbacks = {};
+			tmp.View.SchemaSource = (pEntity, fCallback) => { tmpSchemaCallbacks[pEntity] = fCallback; };   // capture; fire late
+			tmp.View.renderExplorer();
+			tmp.View.toggleNode('root:Book');             // root (Book folder) -> Book records; requests the Book schema
+			tmp.View.toggleNode('root:Book/rec:1');       // record -> auto-expands its sole child (Reviews) -> review records
+			const tmpBefore = document.querySelectorAll('.pdex-row-record').length;
+			Expect(tmpBefore, 'books + the auto-expanded reviews are in the DOM').to.be.greaterThan(2);
+			// The root folder's schema fetch lands now -> it repaints the root + re-renders the Book records. The
+			// auto-expanded Reviews subtree under Book 1 must NOT blank (regression: non-recursive renderChildren).
+			Expect(tmpSchemaCallbacks.Book, 'the root folder requested its schema').to.be.a('function');
+			tmpSchemaCallbacks.Book(null, { properties: { Title: {}, Genre: {} } });
+			Expect(document.querySelectorAll('.pdex-row-record').length, 'the auto-expanded subtree survived the parent repaint').to.equal(tmpBefore);
+		});
 	}
 );
