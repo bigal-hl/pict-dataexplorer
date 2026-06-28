@@ -265,7 +265,15 @@ class PictViewDataExplorer extends libPictView
 		// the pre-fetched Lite); repaint the toolbar once it arrives.
 		if (tmpNode.Kind === 'folder')
 		{
-			this._ensureSchemaColumns(tmpNode.Entity, (pLoaded) => { if (pLoaded && tmpNode.Expanded) { this._renderInner(pKey); } });
+			this._ensureSchemaColumns(tmpNode.Entity, (pLoaded) =>
+			{
+				// Repaint the toolbar to offer the freshly-loaded schema columns. _renderInner resets the child
+				// container, so re-render any already-loaded members afterward — otherwise a slow schema fetch
+				// landing AFTER a fast (e.g. in-memory) member load blanks the children until a collapse/re-expand.
+				if (!pLoaded || !tmpNode.Expanded) { return; }
+				this._renderInner(pKey);
+				if (tmpNode.Loaded) { this.renderChildren(pKey); }
+			});
 		}
 
 		if (tmpNode.Loaded) { return this.renderChildren(pKey); }
